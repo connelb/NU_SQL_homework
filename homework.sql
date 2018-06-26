@@ -87,14 +87,82 @@ ORDER BY c.last_name;
 --     ![Total amount paid](Images/total_payment.png)
 -- 
 -- 7a. The music of Queen and Kris Kristofferson have seen an unlikely resurgence. As an unintended consequence, films starting with the letters K and Q have also soared in popularity. Use subqueries to display the titles of movies starting with the letters K and Q whose language is English.
+-- SELECT  f.title,l.name
+-- FROM film f
+-- INNER JOIN language l
+-- ON f.language_id = l.language_id
+-- WHERE f.title LIKE 'K%' AND l.name='English';
+
+ 
+ 
+ 
+ SELECT  f.title
+  FROM film f
+  WHERE f.language_id IN
+  (
+    SELECT language_id
+    FROM language l 
+    WHERE l.name = 'English'
+  )
 
 -- 7b. Use subqueries to display all actors who appear in the film Alone Trip.
+
+SELECT a.first_name, a.last_name
+FROM actor a
+WHERE a.actor_id IN
+(
+SELECT fa.actor_id
+FROM film_actor fa
+WHERE fa.film_id IN
+(
+SELECT f.film_id
+FROM film f
+WHERE f.title = 'Alone Trip'
+)
+);
 -- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. Use joins to retrieve this information.
+-- TODO ****************
+
+SELECT c.first_name, c.last_name, c.email, co.country
+FROM customer c
+INNER JOIN country co
+ON c.address_id = co.country_id
+WHERE co.country = 'Canada';
+
+
+-- country country country_id, customer customer_id 
+
+
 -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as famiy films.
+
+SELECT film.title,category.name 
+FROM film
+INNER JOIN film_category
+ON film.film_id = film_category.film_id
+INNER JOIN category
+ON film_category.category_id = category.category_id
+WHERE category.name = 'Family';
+
 -- 7e. Display the most frequently rented movies in descending order.
+SELECT rental_id,Count(customer_id)
+FROM rental;
 -- 7f. Write a query to display how much business, in dollars, each store brought in.
+SELECT *
+FROM payment
+GROUP BY staff_id;
 -- 7g. Write a query to display for each store its store ID, city, and country.
+SELECT store_id, city.city, country.country
+FROM store
+INNER JOIN address
+ON store.address_id = address.address_id
+INNER JOIN city
+ON address.city_id = city.city_id
+LEFT JOIN country
+ON city.country_id = country.country_id;
+
 -- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
+
+
 -- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
 -- 8b. How would you display the view that you created in 8a?
 -- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
