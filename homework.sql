@@ -49,36 +49,43 @@ WHERE first_name ='GROUCHO' AND last_name = 'WILLIAMS'
 
 UPDATE actor
 SET first_name ='GROUCHO'
-WHERE first_name ='HARPO' AND last_name = 'WILLIAMS'
-OR first_name ='MUCHO GROUCHO'
+WHERE (first_name ='HARPO' AND last_name = 'WILLIAMS')
+SET first_name ='MUCHO GROUCHO'
 WHERE first_name ='HARPO'; 
 -- WHERE first_name ='HARPO' AND last_name = 'WILLIAMS'; #MUCHO GROUCHO
 
 SELECT * FROM actor;
 -- 5a. You cannot locate the schema of the address table. Which query would you use to re-create it?
-SHOW CREATE TABLE address;
--- 
 -- Hint: https://dev.mysql.com/doc/refman/5.7/en/show-create-table.html
--- 
--- 
--- 
+SHOW CREATE TABLE address;
 -- 6a. Use JOIN to display the first and last names, as well as the address, of each staff member. Use the tables staff and address:
 SELECT s.first_name, s.last_name, a.address
 FROM staff s
-INNER JOIN address a
+LEFT JOIN address a
 ON a.address_id = s.address_id;
 
 -- 6b. Use JOIN to display the total amount rung up by each staff member in August of 2005. Use tables staff and payment.
-SELECT s.first_name, s.last_name, p.amount, p.payment_date
+
+-- TO DO ***************************************
+SELECT s.first_name, s.last_name, sum(p.amount) as 'total', p.payment_date
 FROM staff s
 INNER JOIN payment p
-ON p.staff_id = s.staff_id
+ON s.staff_id = p.staff_id
 WHERE p.payment_date LIKE '%2005_08%';
+
 -- 6c. List each film and the number of actors who are listed for that film. Use tables film_actor and film. Use inner join.
-SELECT f.title, fa.actor_id
-FROM film f
+SELECT f.title, count(fa.actor_id) as 'number of actors'
+FROM (film f
 INNER JOIN film_actor fa
-ON fa.film_id = f.film_id;
+ON f.film_id = fa.film_id)
+GROUP BY f.film_id;
+
+
+-- SELECT Employees.LastName, COUNT(Orders.OrderID) AS NumberOfOrders
+-- FROM (Orders
+-- INNER JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID)
+--  GROUP BY LastName
+-- HAVING COUNT(Orders.OrderID) > 10; 
 
 -- 6d. How many copies of the film Hunchback Impossible exist in the inventory system?
 SELECT COUNT(i.inventory_id) as 'numbers of copies'
@@ -87,64 +94,71 @@ INNER JOIN film f
 ON f.film_id = i.film_id
 WHERE f.title = 'Hunchback Impossible';
 -- 6e. Using the tables payment and customer and the JOIN command, list the total paid by each customer. List the customers alphabetically by last name:
-SELECT c.last_name, c.customer_id, SUM(p.amount) as total
+SELECT c.first_name, c.last_name, SUM(p.amount) as total
 FROM customer c
 INNER JOIN payment p
 ON c.customer_id = p.customer_id
 GROUP BY c.customer_id
 ORDER BY c.last_name;
--- 
---     ![Total amount paid](Images/total_payment.png)
--- 
--- 7a. The music of Queen and Kris Kristofferson have seen an unlikely resurgence. As an unintended consequence, films starting with the letters K and Q have also soared in popularity. Use subqueries to display the titles of movies starting with the letters K and Q whose language is English.
+
+-- 7a. The music of Queen and Kris Kristofferson have seen an unlikely resurgence.
+-- As an unintended consequence, films starting with the letters K and Q have also soared in popularity. 
+-- Use subqueries to display the titles of movies starting with the letters K and Q whose language is English.
 -- SELECT  f.title,l.name
 -- FROM film f
 -- INNER JOIN language l
 -- ON f.language_id = l.language_id
--- WHERE f.title LIKE 'K%' AND l.name='English';
+-- WHERE f.title LIKE 'K%' OR 'Q%' AND l.name='English';
 
- 
- 
- 
- SELECT  f.title
-  FROM film f
-  WHERE f.language_id IN
-  (
-    SELECT language_id
-    FROM language l 
-    WHERE l.name = 'English'
-  )
+SELECT 
+    f.title
+FROM
+    film f
+WHERE
+    f.title LIKE 'K%'
+        OR f.title LIKE 'Q%'
+        AND f.title IN (SELECT 
+            f.title
+        FROM
+            film f
+        WHERE
+            f.language_id IN (SELECT 
+                    language_id
+                FROM
+                    language l
+                WHERE
+                    l.name = 'English'));
 
 -- 7b. Use subqueries to display all actors who appear in the film Alone Trip.
 
-SELECT a.first_name, a.last_name
-FROM actor a
-WHERE a.actor_id IN
-(
-SELECT fa.actor_id
-FROM film_actor fa
-WHERE fa.film_id IN
-(
-SELECT f.film_id
-FROM film f
-WHERE f.title = 'Alone Trip'
-)
-);
+SELECT 
+    a.first_name, a.last_name
+FROM
+    actor a
+WHERE
+    a.actor_id IN (SELECT 
+            fa.actor_id
+        FROM
+            film_actor fa
+        WHERE
+            fa.film_id IN (SELECT 
+                    f.film_id
+                FROM
+                    film f
+                WHERE
+                    f.title = 'Alone Trip'));
 -- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. Use joins to retrieve this information.
--- TODO ****************
-
-SELECT c.first_name, c.last_name, c.email, co.country
+SELECT c.first_name, c.last_name, c.email, country.country
 FROM customer c
-INNER JOIN country co
-ON c.address_id = co.country_id
-WHERE co.country = 'Canada';
-
-
--- country country country_id, customer customer_id 
-
+INNER JOIN address a
+ON c.address_id = a.address_id
+INNER JOIN city
+ON a.city_id = city.city_id
+INNER JOIN country
+ON city.country_id = country.country_id
+WHERE country.country = 'Canada';
 
 -- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as famiy films.
-
 SELECT film.title,category.name 
 FROM film
 INNER JOIN film_category
@@ -154,12 +168,27 @@ ON film_category.category_id = category.category_id
 WHERE category.name = 'Family';
 
 -- 7e. Display the most frequently rented movies in descending order.
-SELECT rental_id,Count(customer_id)
-FROM rental;
+SELECT film.title,Count(rental_id)
+FROM rental
+INNER JOIN inventory
+ON rental.inventory_id = inventory.inventory_id
+INNER JOIN film
+ON inventory.film_id = film.film_id
+GROUP BY film.film_id 
+ORDER BY Count(rental_id) DESC;
 -- 7f. Write a query to display how much business, in dollars, each store brought in.
-SELECT *
+
+SELECT store.store_id,address.address,SUM(amount)
 FROM payment
-GROUP BY staff_id;
+INNER JOIN staff
+ON payment.staff_id = staff.staff_id
+INNER JOIN store
+ON staff.store_id = store.store_id
+INNER JOIN address
+ON store.address_id = address.address_id
+GROUP BY store.address_id;
+
+
 -- 7g. Write a query to display for each store its store ID, city, and country.
 SELECT store_id, city.city, country.country
 FROM store
@@ -167,17 +196,11 @@ INNER JOIN address
 ON store.address_id = address.address_id
 INNER JOIN city
 ON address.city_id = city.city_id
-LEFT JOIN country
+INNER JOIN country
 ON city.country_id = country.country_id;
 
 -- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
--- payment.amount, rental_id, 
--- rental.rental_id, inventory_id
--- inventory.inventory_id, film_id
--- film_category.film_id, category_id
--- category.category_id, name
-
-SELECT amount
+SELECT category.name, SUM(payment.amount) as total
 FROM payment
 INNER JOIN rental
 ON payment.rental_id = rental.rental_id
@@ -186,11 +209,13 @@ ON rental.inventory_id = inventory.inventory_id
 INNER JOIN film_category
 ON inventory.film_id = film_category.film_id
 INNER JOIN category
-ON film_category.category_id = category.category_id;
+ON film_category.category_id = category.category_id
+ORDER BY payment.amount
+LIMIT 5;
 -- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
 
 CREATE VIEW V_Top_genre
-AS SELECT amount
+AS SELECT category.name, SUM(payment.amount) as total
 FROM payment
 INNER JOIN rental
 ON payment.rental_id = rental.rental_id
@@ -199,8 +224,9 @@ ON rental.inventory_id = inventory.inventory_id
 INNER JOIN film_category
 ON inventory.film_id = film_category.film_id
 INNER JOIN category
-ON film_category.category_id = category.category_id;
-
+ON film_category.category_id = category.category_id
+ORDER BY payment.amount
+LIMIT 5;
 
 -- 8b. How would you display the view that you created in 8a?
 SELECT * FROM V_Top_genre;
