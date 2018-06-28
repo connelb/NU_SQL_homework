@@ -41,23 +41,28 @@ GROUP BY last_name
 HAVING COUNT(last_name) >=2;
 -- 4c. Oh, no! The actor HARPO WILLIAMS was accidentally entered in the actor table as GROUCHO WILLIAMS, the name of Harpo's second cousin's husband's yoga teacher. Write a query to fix the record.
 UPDATE actor
-SET first_name ='HARPO' AND last_name = 'WILLIAMS'
-WHERE first_name ='GROUCHO' AND last_name = 'WILLIAMS' 
+SET first_name ='HARPO'
+WHERE (first_name ='GROUCHO' AND last_name = 'WILLIAMS'); 
 
 -- 4d. Perhaps we were too hasty in changing GROUCHO to HARPO. It turns out that GROUCHO was the correct name after all! In a single query, if the first name of the actor is currently HARPO, change it to GROUCHO. Otherwise, change the first name to MUCHO GROUCHO, as that is exactly what the actor will be with the grievous error. BE CAREFUL NOT TO CHANGE THE FIRST NAME OF EVERY ACTOR TO MUCHO GROUCHO, HOWEVER! (Hint: update the record using a unique identifier.)
--- TO DO ***************************************
+UPDATE actor 
+SET 
+    first_name = CASE
+        WHEN first_name ='HARPO' THEN 'GROUCHO'
+        ELSE 'MUCHO GROUCHO'
+    END
+WHERE last_name ='WILLIAMS';  
+--  AND last_name = 'WILLIAMS
+ 
+SELECT * FROM actor
+WHERE first_name LIKE 'MUC%'
 
-UPDATE actor
-SET first_name ='GROUCHO'
-WHERE (first_name ='HARPO' AND last_name = 'WILLIAMS')
-SET first_name ='MUCHO GROUCHO'
-WHERE first_name ='HARPO'; 
--- WHERE first_name ='HARPO' AND last_name = 'WILLIAMS'; #MUCHO GROUCHO
-
-SELECT * FROM actor;
 -- 5a. You cannot locate the schema of the address table. Which query would you use to re-create it?
 -- Hint: https://dev.mysql.com/doc/refman/5.7/en/show-create-table.html
 SHOW CREATE TABLE address;
+
+-- DESC address;
+
 -- 6a. Use JOIN to display the first and last names, as well as the address, of each staff member. Use the tables staff and address:
 SELECT s.first_name, s.last_name, a.address
 FROM staff s
@@ -66,7 +71,6 @@ ON a.address_id = s.address_id;
 
 -- 6b. Use JOIN to display the total amount rung up by each staff member in August of 2005. Use tables staff and payment.
 
--- TO DO ***************************************
 SELECT s.first_name, s.last_name, sum(p.amount) as 'total', p.payment_date
 FROM staff s
 INNER JOIN payment p
@@ -80,12 +84,6 @@ INNER JOIN film_actor fa
 ON f.film_id = fa.film_id)
 GROUP BY f.film_id;
 
-
--- SELECT Employees.LastName, COUNT(Orders.OrderID) AS NumberOfOrders
--- FROM (Orders
--- INNER JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID)
---  GROUP BY LastName
--- HAVING COUNT(Orders.OrderID) > 10; 
 
 -- 6d. How many copies of the film Hunchback Impossible exist in the inventory system?
 SELECT COUNT(i.inventory_id) as 'numbers of copies'
