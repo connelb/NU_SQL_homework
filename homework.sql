@@ -1,3 +1,4 @@
+USE sakila;
 -- 1a. Display the first and last names of all actors from the table actor.
 SELECT first_name,last_name FROM actor;
 -- 1b. Display the first and last name of each actor in a single column in upper case letters. Name the column Actor Name.
@@ -161,8 +162,39 @@ LEFT JOIN country
 ON city.country_id = country.country_id;
 
 -- 7h. List the top five genres in gross revenue in descending order. (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
+-- payment.amount, rental_id, 
+-- rental.rental_id, inventory_id
+-- inventory.inventory_id, film_id
+-- film_category.film_id, category_id
+-- category.category_id, name
 
-
+SELECT amount
+FROM payment
+INNER JOIN rental
+ON payment.rental_id = rental.rental_id
+INNER JOIN inventory
+ON rental.inventory_id = inventory.inventory_id
+INNER JOIN film_category
+ON inventory.film_id = film_category.film_id
+INNER JOIN category
+ON film_category.category_id = category.category_id;
 -- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
+
+CREATE VIEW V_Top_genre
+AS SELECT amount
+FROM payment
+INNER JOIN rental
+ON payment.rental_id = rental.rental_id
+INNER JOIN inventory
+ON rental.inventory_id = inventory.inventory_id
+INNER JOIN film_category
+ON inventory.film_id = film_category.film_id
+INNER JOIN category
+ON film_category.category_id = category.category_id;
+
+
 -- 8b. How would you display the view that you created in 8a?
+SELECT * FROM V_Top_genre;
+
 -- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
+DROP VIEW V_Top_genre;
